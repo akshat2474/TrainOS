@@ -126,15 +126,6 @@ The health score is calculated based on:
 - **Consistency Achievements**: 3-day, 7-day streaks
 - **Point System**: Earn points for unlocking achievements
 
-## Data Persistence
-
-All user data is stored locally using SharedPreferences:
-- User profile settings
-- Daily fitness data (steps, calories, distance)
-- Sleep logs with quality ratings
-- Achievement progress and unlocked status
-- Health scores and recommendations
-
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

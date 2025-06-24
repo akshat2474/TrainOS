@@ -63,7 +63,6 @@ class FitnessService {
     
     final prefs = await SharedPreferences.getInstance();
     
-    // Load today's steps or reset if new day
     final savedDate = prefs.getString('step_date') ?? '';
     final savedSteps = prefs.getInt('daily_steps') ?? 0;
     final savedBaseCount = prefs.getInt('base_step_count') ?? 0;
@@ -72,7 +71,6 @@ class FitnessService {
       _currentSteps = savedSteps;
       _baseStepCount = savedBaseCount;
     } else {
-      // New day - reset steps
       _currentSteps = 0;
       _baseStepCount = 0;
       await prefs.setString('step_date', today);
@@ -91,13 +89,10 @@ class FitnessService {
   void _onStepCount(StepCount event) async {
     final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
     
-    // Check if day changed
     if (today != _currentDate) {
       await _resetDailySteps();
       _currentDate = today;
     }
-
-    // Calculate daily steps
     if (_baseStepCount == 0) {
       _baseStepCount = event.steps;
     }
@@ -105,7 +100,6 @@ class FitnessService {
     _currentSteps = event.steps - _baseStepCount;
     if (_currentSteps < 0) _currentSteps = 0;
 
-    // Save to persistent storage
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt('daily_steps', _currentSteps);
     await prefs.setInt('base_step_count', _baseStepCount);
@@ -181,7 +175,6 @@ class FitnessService {
     return weeklyData;
   }
 
-  // Load current steps on app start
   Future<void> loadCurrentSteps() async {
     final prefs = await SharedPreferences.getInstance();
     final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
@@ -198,15 +191,12 @@ class FitnessService {
   int get currentSteps => _currentSteps;
 }
 
-// Background task callback
 void callbackDispatcher() {
   Workmanager().executeTask((task, inputData) async {
-    // This runs in background to maintain step counting
     final prefs = await SharedPreferences.getInstance();
     final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
     final savedDate = prefs.getString('step_date') ?? '';
-    
-    // Reset steps if new day
+
     if (savedDate != today) {
       await prefs.setInt('daily_steps', 0);
       await prefs.setInt('base_step_count', 0);

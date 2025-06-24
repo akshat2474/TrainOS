@@ -430,7 +430,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  // In home_screen.dart - _buildWeeklyChart()
 Widget _buildWeeklyChart() {
   return Container(
     width: double.infinity,
@@ -508,8 +507,7 @@ Widget _buildWeeklyChart() {
 
 List<BarChartGroupData> _generateBarGroups() {
   List<BarChartGroupData> barGroups = [];
-  
-  // Ensure we have 7 days of data
+
   for (int i = 0; i < 7; i++) {
     double stepValue = 0;
     if (i < _weeklyData.length) {

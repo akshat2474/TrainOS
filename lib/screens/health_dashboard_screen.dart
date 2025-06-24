@@ -229,7 +229,6 @@ class _HealthDashboardScreenState extends State<HealthDashboardScreen> {
     );
   }
 
-  // In health_dashboard_screen.dart - _buildWeeklyTrendChart()
 Widget _buildWeeklyTrendChart() {
   return Container(
     width: double.infinity,

@@ -13,14 +13,11 @@ class HealthScoreService {
   Future<HealthScore> calculateTodaysHealthScore() async {
     final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
     
-    // Get fitness data
     final steps = FitnessService().currentSteps;
     final stepGoal = FitnessService().userProfile?.dailyStepGoal ?? 10000;
     
-    // Get sleep data
     final sleepData = await SleepService().getLastNightSleep();
     
-    // Calculate scores
     final stepsScore = _calculateStepsScore(steps, stepGoal);
     final sleepScore = _calculateSleepScore(sleepData?.totalHours, sleepData?.sleepQuality);
     final activityScore = _calculateActivityScore(steps);

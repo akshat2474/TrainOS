@@ -1,6 +1,6 @@
 class UserProfile {
-  final double weight; // kg
-  final double height; // cm
+  final double weight; 
+  final double height; 
   final int age;
   final String gender;
   final int dailyStepGoal;

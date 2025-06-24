@@ -297,7 +297,6 @@ class _SleepTrackingScreenState extends State<SleepTrackingScreen> {
     );
   }
 
-  // In sleep_tracking_screen.dart - _buildWeeklySleepChart()
 Widget _buildWeeklySleepChart() {
   return Container(
     width: double.infinity,
