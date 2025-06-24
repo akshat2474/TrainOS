@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../services/fitness_service.dart';
+import '../services/achievement_service.dart';
+import '../services/health_score_service.dart';
 import '../models/fitness_data.dart';
+import '../models/health_score.dart';
 import 'profile_setup_screen.dart';
+import 'sleep_tracking_screen.dart';
+import 'health_dashboard_screen.dart';
+import 'achievements_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -11,8 +17,12 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   final FitnessService _fitnessService = FitnessService();
+  final AchievementService _achievementService = AchievementService();
+  final HealthScoreService _healthScoreService = HealthScoreService();
+  
   FitnessData? _currentData;
   List<FitnessData> _weeklyData = [];
+  HealthScore? _todaysHealthScore;
   
   late AnimationController _progressController;
   late AnimationController _cardController;
@@ -22,6 +32,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     _setupAnimations();
+    _initializeServices();
     _loadData();
     _listenToFitnessUpdates();
   }
@@ -45,10 +56,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     _cardController.forward();
   }
 
+  void _initializeServices() async {
+    await _achievementService.initialize();
+    await _fitnessService.loadCurrentSteps();
+  }
+
   void _loadData() async {
     final weeklyData = await _fitnessService.getWeeklyData();
+    final healthScore = await _healthScoreService.calculateTodaysHealthScore();
+    
     setState(() {
       _weeklyData = weeklyData;
+      _todaysHealthScore = healthScore;
     });
   }
 
@@ -58,6 +77,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         _currentData = data;
       });
       _updateProgress();
+      _checkAchievements(data);
     });
   }
 
@@ -66,6 +86,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       final progress = _currentData!.steps / _fitnessService.userProfile!.dailyStepGoal;
       _progressController.animateTo(progress.clamp(0.0, 1.0));
     }
+  }
+
+  void _checkAchievements(FitnessData data) {
+    _achievementService.checkAchievements(steps: data.steps);
   }
 
   @override
@@ -99,7 +123,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     opacity: _cardAnimation,
                     child: Column(
                       children: [
-                        _buildStatusCard(),
+                        _buildQuickActions(),
+                        const SizedBox(height: 24),
+                        _buildHealthScoreCard(),
                         const SizedBox(height: 24),
                         _buildStepCounter(),
                         const SizedBox(height: 24),
@@ -107,7 +133,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         const SizedBox(height: 24),
                         _buildWeeklyChart(),
                         const SizedBox(height: 24),
-                        _buildInsightsCard(),
+                        _buildRecentAchievements(),
                       ],
                     ),
                   ),
@@ -142,99 +168,145 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       ),
       actions: [
         IconButton(
-          icon:const Icon(Icons.settings_outlined, color: Colors.white),
+          icon: const Icon(Icons.settings_outlined, color: Colors.white),
           onPressed: () => Navigator.push(
             context,
-            PageRouteBuilder(
-              pageBuilder: (context, animation, secondaryAnimation) => ProfileSetupScreen(),
-              transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                return SlideTransition(
-                  position: Tween<Offset>(
-                    begin:const Offset(1.0, 0.0),
-                    end: Offset.zero,
-                  ).animate(animation),
-                  child: child,
-                );
-              },
-            ),
+            MaterialPageRoute(builder: (context) => ProfileSetupScreen()),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildStatusCard() {
-    final progress = _currentData != null && _fitnessService.userProfile != null
-        ? _currentData!.steps / _fitnessService.userProfile!.dailyStepGoal
-        : 0.0;
-
-    String statusMessage = _getStatusMessage(progress);
-    Color statusColor = _getStatusColor(progress);
-
-    return Container(
-      width: double.infinity,
-      padding:const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.1),
-          width: 1,
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 12,
-            height: 12,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: statusColor,
-              boxShadow: [
-                BoxShadow(
-                  color: statusColor.withOpacity(0.5),
-                  blurRadius: 8,
-                  spreadRadius: 2,
-                ),
-              ],
-            ),
+  Widget _buildQuickActions() {
+    return Row(
+      children: [
+        Expanded(
+          child: _buildActionCard(
+            'Sleep',
+            Icons.bedtime_outlined,
+            () => Navigator.push(context, MaterialPageRoute(builder: (context) => SleepTrackingScreen())),
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Text(
-              statusMessage,
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _buildActionCard(
+            'Health',
+            Icons.favorite_outline,
+            () => Navigator.push(context, MaterialPageRoute(builder: (context) => HealthDashboardScreen())),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _buildActionCard(
+            'Awards',
+            Icons.emoji_events_outlined,
+            () => Navigator.push(context, MaterialPageRoute(builder: (context) => AchievementsScreen())),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActionCard(String title, IconData icon, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding:const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.white.withOpacity(0.1)),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color:const Color(0xFF00D4FF), size: 24),
+            const SizedBox(height: 8),
+            Text(
+              title,
               style:const TextStyle(
                 color: Colors.white,
-                fontSize: 16,
+                fontSize: 14,
                 fontWeight: FontWeight.w400,
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  String _getStatusMessage(double progress) {
-    if (progress >= 1.0) return "Goal achieved! Excellent work today.";
-    if (progress >= 0.8) return "Almost there! You're doing great.";
-    if (progress >= 0.5) return "Good progress! Keep it up.";
-    if (progress >= 0.2) return "Getting started! Every step counts.";
-    return "Ready to start your fitness journey?";
-  }
+  Widget _buildHealthScoreCard() {
+    if (_todaysHealthScore == null) return Container();
 
-  Color _getStatusColor(double progress) {
-    if (progress >= 1.0) return const Color(0xFF00FF88);
-    if (progress >= 0.8) return const Color(0xFF00D4FF);
-    if (progress >= 0.5) return const Color(0xFF5B73FF);
-    if (progress >= 0.2) return const Color(0xFFFFB800);
-    return const Color(0xFF8E8E93);
+    return GestureDetector(
+      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => HealthDashboardScreen())),
+      child: Container(
+        width: double.infinity,
+        padding:const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.white.withOpacity(0.1)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 60,
+              height: 60,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: _getScoreColor(_todaysHealthScore!.overallScore).withOpacity(0.2),
+              ),
+              child: Center(
+                child: Text(
+                  '${_todaysHealthScore!.overallScore}',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w500,
+                    color: _getScoreColor(_todaysHealthScore!.overallScore),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Health Score',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    _getScoreLabel(_todaysHealthScore!.overallScore),
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.7),
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.arrow_forward_ios,
+              color: Colors.white.withOpacity(0.5),
+              size: 16,
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildStepCounter() {
-    final steps = _currentData?.steps ?? 0;
+    final steps = _currentData?.steps ?? _fitnessService.currentSteps;
     final goal = _fitnessService.userProfile?.dailyStepGoal ?? 10000;
-    final progress = steps / goal;
 
     return Container(
       width: double.infinity,
@@ -242,17 +314,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.05),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.1),
-          width: 1,
-        ),
+        border: Border.all(color: Colors.white.withOpacity(0.1)),
       ),
       child: Column(
         children: [
           Text(
             'Steps Today',
             style: TextStyle(
-              fontSize: 16,
+              fontSize: 18,
               color: Colors.white.withOpacity(0.7),
               fontWeight: FontWeight.w300,
             ),
@@ -271,9 +340,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       value: _progressController.value,
                       strokeWidth: 8,
                       backgroundColor: Colors.white.withOpacity(0.1),
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        progress >= 1.0 ? const Color(0xFF00FF88) : const Color(0xFF00D4FF),
-                      ),
+                      valueColor:const AlwaysStoppedAnimation<Color>(Color(0xFF00D4FF)),
                     ),
                   ),
                   Column(
@@ -331,23 +398,20 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   Widget _buildStatCard(String title, String value, IconData icon, Color color) {
     return Container(
-      padding: EdgeInsets.all(20),
+      padding:const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.05),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.1),
-          width: 1,
-        ),
+        border: Border.all(color: Colors.white.withOpacity(0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(icon, color: color, size: 28),
-          SizedBox(height: 12),
+          const SizedBox(height: 12),
           Text(
             value,
-            style: TextStyle(
+            style:const TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.w300,
               color: Colors.white,
@@ -369,19 +433,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   Widget _buildWeeklyChart() {
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.all(24),
+      padding:const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.05),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.1),
-          width: 1,
-        ),
+        border: Border.all(color: Colors.white.withOpacity(0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
+          const Text(
             'Weekly Overview',
             style: TextStyle(
               fontSize: 20,
@@ -389,7 +450,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               color: Colors.white,
             ),
           ),
-          SizedBox(height: 24),
+          const SizedBox(height: 24),
           SizedBox(
             height: 200,
             child: BarChart(
@@ -415,9 +476,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       },
                     ),
                   ),
-                  leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                 ),
                 borderData: FlBorderData(show: false),
                 barGroups: _weeklyData.asMap().entries.map((entry) {
@@ -426,7 +487,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     barRods: [
                       BarChartRodData(
                         toY: entry.value.steps.toDouble(),
-                        gradient: LinearGradient(
+                        gradient: const LinearGradient(
                           colors: [Color(0xFF00D4FF), Color(0xFF5B73FF)],
                           begin: Alignment.bottomCenter,
                           end: Alignment.topCenter,
@@ -445,70 +506,92 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildInsightsCard() {
+  Widget _buildRecentAchievements() {
+    final recentAchievements = _achievementService.unlockedAchievements
+        .take(3)
+        .toList();
+
+    if (recentAchievements.isEmpty) {
+      return Container();
+    }
+
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.all(24),
+      padding:const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.05),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.1),
-          width: 1,
-        ),
+        border: Border.all(color: Colors.white.withOpacity(0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Insights',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w300,
-              color: Colors.white,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Recent Achievements',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w300,
+                  color: Colors.white,
+                ),
+              ),
+              GestureDetector(
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => AchievementsScreen())),
+                child:const Text(
+                  'View All',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Color(0xFF00D4FF),
+                  ),
+                ),
+              ),
+            ],
           ),
-          SizedBox(height: 16),
-          _buildInsightItem("Take regular breaks", "Stand up every hour"),
-          _buildInsightItem("Stay hydrated", "Drink water throughout the day"),
-          _buildInsightItem("Track progress", "Monitor your daily achievements"),
+          const SizedBox(height: 16),
+          ...recentAchievements.map((achievement) => _buildAchievementItem(achievement)),
         ],
       ),
     );
   }
 
-  Widget _buildInsightItem(String title, String subtitle) {
+  Widget _buildAchievementItem( achievement) {
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         children: [
           Container(
-            width: 6,
-            height: 6,
+            width: 40,
+            height: 40,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
+              color:const Color(0xFF00D4FF).withOpacity(0.2),
+            ),
+            child:const Icon(
+              Icons.emoji_events,
               color: Color(0xFF00D4FF),
+              size: 20,
             ),
           ),
-          SizedBox(width: 12),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  title,
-                  style: TextStyle(
+                  achievement.title,
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 14,
                     fontWeight: FontWeight.w400,
                   ),
                 ),
                 Text(
-                  subtitle,
+                  '${achievement.points} points',
                   style: TextStyle(
                     color: Colors.white.withOpacity(0.6),
                     fontSize: 12,
-                    fontWeight: FontWeight.w300,
                   ),
                 ),
               ],
@@ -519,6 +602,22 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
+  Color _getScoreColor(int score) {
+    if (score >= 90) return const Color(0xFF00FF88);
+    if (score >= 80) return const Color(0xFF00D4FF);
+    if (score >= 70) return const Color(0xFF5B73FF);
+    if (score >= 60) return const Color(0xFFFFB800);
+    return const Color(0xFFFF6B6B);
+  }
+
+  String _getScoreLabel(int score) {
+    if (score >= 90) return 'Excellent';
+    if (score >= 80) return 'Great';
+    if (score >= 70) return 'Good';
+    if (score >= 60) return 'Fair';
+    return 'Needs Work';
+  }
+
   @override
   void dispose() {
     _progressController.dispose();
@@ -526,6 +625,3 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     super.dispose();
   }
 }
-
-
-

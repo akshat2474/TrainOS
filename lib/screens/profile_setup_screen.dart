@@ -390,7 +390,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen>
           ),
         );
         
-        await Future.delayed(Duration(milliseconds: 500));
+        await Future.delayed(const Duration(milliseconds: 500));
         
         Navigator.pushReplacement(
           context,

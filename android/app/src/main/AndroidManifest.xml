@@ -1,18 +1,18 @@
+<!-- android/app/src/main/AndroidManifest.xml -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     
-    <!-- ADD PERMISSIONS HERE - BEFORE THE APPLICATION TAG -->
+    <!-- Add these permissions -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.CAMERA" />
-    <!-- Add any other permissions you need -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     
     <application
-        android:label="train_os"
+        android:label="TrainOS"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         
-        <!-- Your existing application content stays the same -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -33,6 +33,11 @@
             </intent-filter>
         </activity>
         
+        <!-- Background work manager -->
+        <service
+            android:name="be.tramckrijte.workmanager.BackgroundService"
+            android:exported="false" />
+        
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
@@ -45,4 +50,5 @@
         </intent>
     </queries>
 </manifest>
+
 
