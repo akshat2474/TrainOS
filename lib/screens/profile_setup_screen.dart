@@ -270,7 +270,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen>
         ),
         color: Colors.white.withOpacity(0.05),
       ),
-      padding: EdgeInsets.symmetric(horizontal: 20),
+      padding:const EdgeInsets.symmetric(horizontal: 20),
       child: DropdownButtonFormField<String>(
         value: _selectedGender,
         style:const TextStyle(
@@ -328,7 +328,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen>
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Color(0xFF00D4FF).withOpacity(0.3),
+            color:const Color(0xFF00D4FF).withOpacity(0.3),
             blurRadius: 20,
             offset:const Offset(0, 10),
           ),

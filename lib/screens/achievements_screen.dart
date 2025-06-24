@@ -98,7 +98,7 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
           LinearProgressIndicator(
             value: unlockedCount / totalCount,
             backgroundColor: Colors.white.withOpacity(0.1),
-            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF00D4FF)),
+            valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF00D4FF)),
           ),
         ],
       ),
@@ -108,7 +108,7 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
   Widget _buildStatItem(String label, String value, IconData icon) {
     return Column(
       children: [
-        Icon(icon, color: Color(0xFF00D4FF), size: 28),
+        Icon(icon, color: const Color(0xFF00D4FF), size: 28),
         const SizedBox(height: 8),
         Text(
           value,
@@ -161,7 +161,7 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isUnlocked 
-              ? Color(0xFF00D4FF).withOpacity(0.3)
+              ? const Color(0xFF00D4FF).withOpacity(0.3)
               : Colors.white.withOpacity(0.1),
         ),
       ),
@@ -178,7 +178,7 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
             ),
             child: Icon(
               isUnlocked ? Icons.emoji_events : Icons.lock,
-              color: isUnlocked ? Color(0xFF00D4FF) : Colors.white.withOpacity(0.4),
+              color: isUnlocked ? const Color(0xFF00D4FF) : Colors.white.withOpacity(0.4),
               size: 28,
             ),
           ),
@@ -221,7 +221,7 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
           Container(
             padding:const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: isUnlocked ? Color(0xFF00D4FF) : Colors.grey,
+              color: isUnlocked ?const Color(0xFF00D4FF) : Colors.grey,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(

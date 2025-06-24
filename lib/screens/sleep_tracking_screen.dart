@@ -297,74 +297,104 @@ class _SleepTrackingScreenState extends State<SleepTrackingScreen> {
     );
   }
 
-  Widget _buildWeeklySleepChart() {
-    return Container(
-      width: double.infinity,
-      padding:const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Weekly Sleep Pattern',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w300,
-              color: Colors.white,
-            ),
+  // In sleep_tracking_screen.dart - _buildWeeklySleepChart()
+Widget _buildWeeklySleepChart() {
+  return Container(
+    width: double.infinity,
+    padding:const EdgeInsets.all(24),
+    decoration: BoxDecoration(
+      color: Colors.white.withOpacity(0.05),
+      borderRadius: BorderRadius.circular(20),
+      border: Border.all(color: Colors.white.withOpacity(0.1)),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Weekly Sleep Pattern',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w300,
+            color: Colors.white,
           ),
-          const SizedBox(height: 20),
-          SizedBox(
-            height: 200,
-            child: LineChart(
-              LineChartData(
-                gridData:const FlGridData(show: false),
-                titlesData: FlTitlesData(
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      getTitlesWidget: (value, meta) {
-                        const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-                        if (value.toInt() < days.length) {
-                          return Text(
-                            days[value.toInt()],
-                            style: TextStyle(color: Colors.white.withOpacity(0.6)),
-                          );
-                        }
-                        return const Text('');
-                      },
-                    ),
-                  ),
-                  leftTitles:const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  topTitles:const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  rightTitles:const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        ),
+        const SizedBox(height: 20),
+        SizedBox(
+          height: 200,
+          child: _weeklySleep.isEmpty
+            ? Center(
+                child: Text(
+                  'No sleep data available',
+                  style: TextStyle(color: Colors.white.withOpacity(0.6)),
                 ),
-                borderData: FlBorderData(show: false),
-                lineBarsData: [
-                  LineChartBarData(
-                    spots: _weeklySleep.asMap().entries.map((entry) {
-                      return FlSpot(
-                        entry.key.toDouble(),
-                        entry.value.totalHours,
-                      );
-                    }).toList(),
-                    isCurved: true,
-                    color:const Color(0xFF00D4FF),
-                    barWidth: 3,
-                    dotData: const FlDotData(show: true),
+              )
+            : LineChart(
+                LineChartData(
+                  gridData:const FlGridData(show: false),
+                  titlesData: FlTitlesData(
+                    show: true,
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 30,
+                        getTitlesWidget: (value, meta) {
+                          const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                          int index = value.toInt();
+                          if (index >= 0 && index < days.length) {
+                            return Padding(
+                              padding:const EdgeInsets.only(top: 8),
+                              child: Text(
+                                days[index],
+                                style: TextStyle(color: Colors.white.withOpacity(0.6)),
+                              ),
+                            );
+                          }
+                          return const Text('');
+                        },
+                      ),
+                    ),
+                    leftTitles:const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    topTitles:const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    rightTitles:const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                   ),
-                ],
+                  borderData: FlBorderData(show: false),
+                  lineBarsData: [
+                    LineChartBarData(
+                      spots: _generateSleepSpots(),
+                      isCurved: true,
+                      color:const Color(0xFF00D4FF),
+                      barWidth: 3,
+                      dotData: const FlDotData(show: true),
+                      belowBarData: BarAreaData(
+                        show: true,
+                        color:const Color(0xFF00D4FF).withOpacity(0.1),
+                      ),
+                    ),
+                  ],
+                  minY: 0,
+                  maxY: 12,
+                ),
               ),
-            ),
-          ),
-        ],
-      ),
-    );
+        ),
+      ],
+    ),
+  );
+}
+
+List<FlSpot> _generateSleepSpots() {
+  List<FlSpot> spots = [];
+  
+  for (int i = 0; i < 7; i++) {
+    double sleepHours = 0;
+    if (i < _weeklySleep.length) {
+      sleepHours = _weeklySleep[i].totalHours;
+    }
+    spots.add(FlSpot(i.toDouble(), sleepHours));
   }
+  
+  return spots;
+}
+
 
   void _logSleep() async {
     if (_bedTime == null || _wakeTime == null) return;

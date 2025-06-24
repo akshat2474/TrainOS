@@ -39,7 +39,7 @@ class FitnessService {
     await Workmanager().registerPeriodicTask(
       "step-counter",
       "stepCounterTask",
-      frequency: Duration(minutes: 15),
+      frequency:const Duration(minutes: 15),
     );
   }
 

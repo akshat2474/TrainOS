@@ -229,74 +229,100 @@ class _HealthDashboardScreenState extends State<HealthDashboardScreen> {
     );
   }
 
-  Widget _buildWeeklyTrendChart() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Weekly Trend',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w300,
-              color: Colors.white,
-            ),
+  // In health_dashboard_screen.dart - _buildWeeklyTrendChart()
+Widget _buildWeeklyTrendChart() {
+  return Container(
+    width: double.infinity,
+    padding: const EdgeInsets.all(24),
+    decoration: BoxDecoration(
+      color: Colors.white.withOpacity(0.05),
+      borderRadius: BorderRadius.circular(20),
+      border: Border.all(color: Colors.white.withOpacity(0.1)),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Weekly Trend',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w300,
+            color: Colors.white,
           ),
-          const SizedBox(height: 20),
-          SizedBox(
-            height: 200,
-            child: LineChart(
-              LineChartData(
-                gridData: const FlGridData(show: false),
-                titlesData: FlTitlesData(
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      getTitlesWidget: (value, meta) {
-                        const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-                        if (value.toInt() < days.length) {
-                          return Text(
-                            days[value.toInt()],
-                            style: TextStyle(color: Colors.white.withOpacity(0.6)),
-                          );
-                        }
-                        return const Text('');
-                      },
-                    ),
-                  ),
-                  leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        ),
+        const SizedBox(height: 20),
+        SizedBox(
+          height: 200,
+          child: _weeklyScores.isEmpty
+            ? Center(
+                child: Text(
+                  'No health data available',
+                  style: TextStyle(color: Colors.white.withOpacity(0.6)),
                 ),
-                borderData: FlBorderData(show: false),
-                lineBarsData: [
-                  LineChartBarData(
-                    spots: _weeklyScores.asMap().entries.map((entry) {
-                      return FlSpot(
-                        entry.key.toDouble(),
-                        entry.value.overallScore.toDouble(),
-                      );
-                    }).toList(),
-                    isCurved: true,
-                    color: const Color(0xFF00D4FF),
-                    barWidth: 3,
-                    dotData: const FlDotData(show: true),
+              )
+            : LineChart(
+                LineChartData(
+                  gridData: const FlGridData(show: false),
+                  titlesData: FlTitlesData(
+                    show: true,
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 30,
+                        getTitlesWidget: (value, meta) {
+                          const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                          int index = value.toInt();
+                          if (index >= 0 && index < days.length) {
+                            return Padding(
+                              padding:const EdgeInsets.only(top: 8),
+                              child: Text(
+                                days[index],
+                                style: TextStyle(color: Colors.white.withOpacity(0.6)),
+                              ),
+                            );
+                          }
+                          return const Text('');
+                        },
+                      ),
+                    ),
+                    leftTitles:const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    topTitles:const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    rightTitles:const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                   ),
-                ],
+                  borderData: FlBorderData(show: false),
+                  lineBarsData: [
+                    LineChartBarData(
+                      spots: _generateHealthSpots(),
+                      isCurved: true,
+                      color:const Color(0xFF00D4FF),
+                      barWidth: 3,
+                      dotData:const FlDotData(show: true),
+                    ),
+                  ],
+                  minY: 0,
+                  maxY: 100,
+                ),
               ),
-            ),
-          ),
-        ],
-      ),
-    );
+        ),
+      ],
+    ),
+  );
+}
+
+List<FlSpot> _generateHealthSpots() {
+  List<FlSpot> spots = [];
+  
+  for (int i = 0; i < 7; i++) {
+    double score = 0;
+    if (i < _weeklyScores.length) {
+      score = _weeklyScores[i].overallScore.toDouble();
+    }
+    spots.add(FlSpot(i.toDouble(), score));
   }
+  
+  return spots;
+}
+
 
   Widget _buildRecommendationCard() {
     if (_todaysScore == null) return Container();
@@ -326,7 +352,7 @@ class _HealthDashboardScreenState extends State<HealthDashboardScreen> {
               ),
             ],
           ),
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
           Text(
             _todaysScore!.recommendation,
             style: TextStyle(

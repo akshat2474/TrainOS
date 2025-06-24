@@ -430,81 +430,114 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildWeeklyChart() {
-    return Container(
-      width: double.infinity,
-      padding:const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Weekly Overview',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w300,
-              color: Colors.white,
-            ),
+  // In home_screen.dart - _buildWeeklyChart()
+Widget _buildWeeklyChart() {
+  return Container(
+    width: double.infinity,
+    padding:const EdgeInsets.all(24),
+    decoration: BoxDecoration(
+      color: Colors.white.withOpacity(0.05),
+      borderRadius: BorderRadius.circular(20),
+      border: Border.all(color: Colors.white.withOpacity(0.1)),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Weekly Overview',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w300,
+            color: Colors.white,
           ),
-          const SizedBox(height: 24),
-          SizedBox(
-            height: 200,
-            child: BarChart(
-              BarChartData(
-                alignment: BarChartAlignment.spaceAround,
-                maxY: (_fitnessService.userProfile?.dailyStepGoal ?? 10000).toDouble(),
-                barTouchData: BarTouchData(enabled: false),
-                titlesData: FlTitlesData(
-                  show: true,
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      getTitlesWidget: (value, meta) {
-                        const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-                        return Text(
-                          days[value.toInt()],
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.6),
-                            fontSize: 12,
-                            fontWeight: FontWeight.w300,
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                  leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        ),
+        const SizedBox(height: 24),
+        SizedBox(
+          height: 200,
+          child: _weeklyData.isEmpty 
+            ? Center(
+                child: Text(
+                  'No data available',
+                  style: TextStyle(color: Colors.white.withOpacity(0.6)),
                 ),
-                borderData: FlBorderData(show: false),
-                barGroups: _weeklyData.asMap().entries.map((entry) {
-                  return BarChartGroupData(
-                    x: entry.key,
-                    barRods: [
-                      BarChartRodData(
-                        toY: entry.value.steps.toDouble(),
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF00D4FF), Color(0xFF5B73FF)],
-                          begin: Alignment.bottomCenter,
-                          end: Alignment.topCenter,
-                        ),
-                        width: 20,
-                        borderRadius: BorderRadius.circular(4),
+              )
+            : BarChart(
+                BarChartData(
+                  alignment: BarChartAlignment.spaceAround,
+                  maxY: (_fitnessService.userProfile?.dailyStepGoal ?? 10000).toDouble(),
+                  barTouchData:const BarTouchData(enabled: false),
+                  titlesData: FlTitlesData(
+                    show: true,
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 30,
+                        getTitlesWidget: (value, meta) {
+                          const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                          int index = value.toInt();
+                          if (index >= 0 && index < days.length) {
+                            return Padding(
+                              padding:const EdgeInsets.only(top: 8),
+                              child: Text(
+                                days[index],
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(0.6),
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w300,
+                                ),
+                              ),
+                            );
+                          }
+                          return const Text('');
+                        },
                       ),
-                    ],
-                  );
-                }).toList(),
+                    ),
+                    leftTitles:const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    topTitles:const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    rightTitles:const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  ),
+                  borderData: FlBorderData(show: false),
+                  barGroups: _generateBarGroups(),
+                ),
               ),
+        ),
+      ],
+    ),
+  );
+}
+
+List<BarChartGroupData> _generateBarGroups() {
+  List<BarChartGroupData> barGroups = [];
+  
+  // Ensure we have 7 days of data
+  for (int i = 0; i < 7; i++) {
+    double stepValue = 0;
+    if (i < _weeklyData.length) {
+      stepValue = _weeklyData[i].steps.toDouble();
+    }
+    
+    barGroups.add(
+      BarChartGroupData(
+        x: i,
+        barRods: [
+          BarChartRodData(
+            toY: stepValue,
+            gradient: const LinearGradient(
+              colors: [Color(0xFF00D4FF), Color(0xFF5B73FF)],
+              begin: Alignment.bottomCenter,
+              end: Alignment.topCenter,
             ),
+            width: 20,
+            borderRadius: BorderRadius.circular(4),
           ),
         ],
       ),
     );
   }
+  
+  return barGroups;
+}
+
 
   Widget _buildRecentAchievements() {
     final recentAchievements = _achievementService.unlockedAchievements
