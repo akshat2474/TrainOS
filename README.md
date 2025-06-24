@@ -9,14 +9,6 @@ A comprehensive Flutter-based fitness tracking application with modern UI design
   <img src="screenshots/achievements.jpg" width="200" alt="Achievements"/>
 </div>
 
-### Main Features
-![Home Screen](screenshots/home_screen.jpg)
-*TrainOS home screen with step counter and health score*
-
-![Health Dashboard](screenshots/achievements.jpg)
-*Detailed health analytics and recommendations*
-
-
 ## Features
 
 ### Core Functionality
