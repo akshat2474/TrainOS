@@ -28,12 +28,6 @@ A comprehensive Flutter-based fitness tracking application with modern UI design
 - **Progress Tracking**: Visual progress indicators and milestone celebrations
 - **Consistency Rewards**: Special achievements for maintaining healthy habits
 
-### Professional UI/UX
-- **Dark Theme**: Modern gradient-based dark theme design
-- **Smooth Animations**: Professional animations and transitions throughout the app
-- **Intuitive Navigation**: Easy-to-use interface with quick action buttons
-- **Responsive Design**: Optimized for various screen sizes
-
 ## 🔧 Installation
 
 1. **Clone the repository**
@@ -106,25 +100,6 @@ lib/
     ├── health_dashboard_screen.dart
     └── achievements_screen.dart
 ```
-
-### Persistent Step Counting
-- Uses device's built-in pedometer
-- Stores daily steps in SharedPreferences
-- Handles app restarts and device reboots
-- Automatic daily reset at midnight
-
-### Health Score Algorithm
-The health score is calculated based on:
-- **Steps Score** (25%): Daily step goal achievement
-- **Sleep Score** (25%): Sleep duration and quality
-- **Activity Score** (25%): Overall activity level
-- **Consistency Score** (25%): Goal achievement consistency
-
-### Achievement System
-- **Step Achievements**: 100, 5K, 20K daily steps
-- **Sleep Achievements**: Quality sleep, early wake-up
-- **Consistency Achievements**: 3-day, 7-day streaks
-- **Point System**: Earn points for unlocking achievements
 
 ## 📄 License
 
